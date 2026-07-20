@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.png",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/form.html", "dest": "/form.html" },
+    { "src": "/ss.html", "dest": "/ss.html" },
+    { "src": "/logo.png", "dest": "/logo.png" },
+    { "src": "/", "dest": "/details.html" },
+    { "src": "/(.*)", "dest": "/details.html" }
+  ]
+}
