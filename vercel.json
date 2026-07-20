@@ -12,14 +12,19 @@
     {
       "src": "*.png",
       "use": "@vercel/static"
+    },
+    {
+      "src": "*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/index.js" },
-    { "src": "/form.html", "dest": "/form.html" },
-    { "src": "/ss.html", "dest": "/ss.html" },
-    { "src": "/logo.png", "dest": "/logo.png" },
-    { "src": "/", "dest": "/details.html" },
-    { "src": "/(.*)", "dest": "/details.html" }
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
