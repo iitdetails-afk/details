@@ -932,8 +932,14 @@
     badge.textContent = `🎉 Submitted! ID: ${id}`;
     document.getElementById('submissionResult').style.display = 'block';
     showToast(`Application submitted! ID: ${id}`, 'success');
-    const targetUrl = sessionStorage.getItem('iitAdminToken') ? 'admin.html' : 'index.html';
-    setTimeout(() => { window.location.href = targetUrl; }, 4000);
+    
+    if (sessionStorage.getItem('iitAdminToken')) {
+      setTimeout(() => { window.location.href = 'admin.html'; }, 4000);
+    } else {
+      // Hide action bar for standard users after submission
+      const actionBar = document.querySelector('.action-bar');
+      if (actionBar) actionBar.style.display = 'none';
+    }
   }
 
   function clearForm() {
@@ -944,12 +950,16 @@
   // ── Init ──
   loadSavedDetails();
 
-  // If logged in as admin, direct back to admin dashboard
+  // Handle back button visibility depending on admin session
+  const backBtn = document.querySelector('.btn-back');
   if (sessionStorage.getItem('iitAdminToken')) {
-    const backBtn = document.querySelector('.btn-back');
     if (backBtn) {
       backBtn.href = 'admin.html';
       backBtn.textContent = '← Back to Admin';
+    }
+  } else {
+    if (backBtn) {
+      backBtn.style.display = 'none';
     }
   }
 </script>
