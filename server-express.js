@@ -191,6 +191,14 @@ app.post('/api/submit', (req, res) => {
     }
   }
 
+  // Validate email uniqueness for new submissions
+  if (payload.email && payload.email.trim()) {
+    const emailExists = submissions.some(s => s.email && s.email.trim().toLowerCase() === payload.email.trim().toLowerCase());
+    if (emailExists) {
+      return res.status(400).json({ success: false, error: 'This email is already registered. Each email can only be used once.' });
+    }
+  }
+
   const generatedId = getNextSubmissionId(submissions);
   const newPayload = { 
     ...payload, 

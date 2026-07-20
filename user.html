@@ -897,19 +897,21 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      if (r.ok) {
-        const rd = await r.json();
-        if (rd.success && rd.saved) {
-          const subs = getSubmissions();
-          if (editId) {
-            const idx = subs.findIndex(s => s.submissionId === editId);
-            if (idx !== -1) subs[idx] = rd.saved; else subs.push(rd.saved);
-          } else { subs.push(rd.saved); }
-          saveSubmissions(subs);
-          showSubmissionSuccess(rd.saved.submissionId);
-        }
-      } else throw new Error('Server error');
+      const rd = await r.json();
+      if (r.ok && rd.success && rd.saved) {
+        const subs = getSubmissions();
+        if (editId) {
+          const idx = subs.findIndex(s => s.submissionId === editId);
+          if (idx !== -1) subs[idx] = rd.saved; else subs.push(rd.saved);
+        } else { subs.push(rd.saved); }
+        saveSubmissions(subs);
+        showSubmissionSuccess(rd.saved.submissionId);
+      } else {
+        showToast(rd.error || 'Submission failed.', 'error');
+        return; // Don't clear form or offline save if validation failed
+      }
     } catch(e) {
+      // Offline fallback for network failures
       const id = editId || generateId();
       data.submissionId = id;
       data.submittedAt = new Date().toLocaleString();

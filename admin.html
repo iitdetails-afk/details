@@ -1367,24 +1367,55 @@
   // ── Apps Script code ──
   const appsScriptCode = `function doPost(e) {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var data = JSON.parse(e.postData.contents);
     var action = data.action || "SAVE";
     var submissionId = data.submissionId || "";
     if (!submissionId) return ContentService.createTextOutput(JSON.stringify({success:false,error:"Missing ID"})).setMimeType(ContentService.MimeType.JSON);
-    var existingRow = -1, lastRow = sheet.getLastRow();
-    if (lastRow > 1) {
-      var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-      for (var i = 0; i < ids.length; i++) { if (ids[i][0] === submissionId) { existingRow = i + 2; break; } }
+    
+    // Find existing submission across all sheets
+    var sheets = ss.getSheets();
+    var foundSheet = null;
+    var existingRow = -1;
+    for (var s = 0; s < sheets.length; s++) {
+      var curSheet = sheets[s];
+      var lastRow = curSheet.getLastRow();
+      if (lastRow > 1) {
+        var ids = curSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+        for (var i = 0; i < ids.length; i++) {
+          if (ids[i][0] === submissionId) {
+            foundSheet = curSheet;
+            existingRow = i + 2;
+            break;
+          }
+        }
+      }
+      if (existingRow !== -1) break;
     }
+    
     if (action === "DELETE") {
-      if (existingRow !== -1) sheet.deleteRow(existingRow);
+      if (foundSheet && existingRow !== -1) foundSheet.deleteRow(existingRow);
       return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
     }
-    if (sheet.getLastRow() === 0) sheet.appendRow(["ID","Submitted At","Name","Yr/Dept","College","Email","Address","Mob1","Mob2","Pin","Course","HowKnow","Signature","Fees","DOJ","CertNo","DOI","T1","T2","T3","T4"]);
+    
     var row = [submissionId,data.submittedAt||"",data.name||"",data.yearDept||"",data.collegeSchool||"",data.email||"",data.address||"",data.mobile1||"",data.mobile2||"",data.pincode||"",data.title||"",data.howKnow||"",data.signature||"",data.feesFixed||"",data.dateJoining||"",data.certNo||"",data.dateIssue||"",data.term1?"Yes":"No",data.term2?"Yes":"No",data.term3?"Yes":"No",data.term4?"Yes":"No"];
-    if (existingRow !== -1) sheet.getRange(existingRow, 1, 1, row.length).setValues([row]);
-    else sheet.appendRow(row);
+    
+    if (existingRow !== -1 && foundSheet) {
+      foundSheet.getRange(existingRow, 1, 1, row.length).setValues([row]);
+    } else {
+      // Determine sheet name based on submission month
+      var dateObj = data.submittedAt ? new Date(data.submittedAt) : new Date();
+      if (isNaN(dateObj.getTime())) dateObj = new Date();
+      var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      var sheetName = months[dateObj.getMonth()] + " " + dateObj.getFullYear();
+      
+      var targetSheet = ss.getSheetByName(sheetName);
+      if (!targetSheet) {
+        targetSheet = ss.insertSheet(sheetName);
+        targetSheet.appendRow(["ID","Submitted At","Name","Yr/Dept","College","Email","Address","Mob1","Mob2","Pin","Course","HowKnow","Signature","Fees","DOJ","CertNo","DOI","T1","T2","T3","T4"]);
+      }
+      targetSheet.appendRow(row);
+    }
     return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
   } catch(err) { return ContentService.createTextOutput(JSON.stringify({success:false,error:err.toString()})).setMimeType(ContentService.MimeType.JSON); }
 }`;
