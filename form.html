@@ -998,8 +998,14 @@
       const response = await fetch('/api/details');
       if (response.ok) {
         const details = await response.json();
-        if (details && typeof details === 'object') {
+        if (details && typeof details === 'object' && Object.keys(details).length > 0) {
           applySubmissionToForm(details);
+          localStorage.removeItem(DETAILS_KEY);
+          fetch('/api/details', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          }).catch(() => {});
           return;
         }
       }
@@ -1008,8 +1014,14 @@
     }
 
     try {
-      const details = JSON.parse(localStorage.getItem(DETAILS_KEY) || '{}');
-      applySubmissionToForm(details);
+      const detailsStr = localStorage.getItem(DETAILS_KEY);
+      if (detailsStr) {
+        const details = JSON.parse(detailsStr);
+        if (details && typeof details === 'object' && Object.keys(details).length > 0) {
+          applySubmissionToForm(details);
+          localStorage.removeItem(DETAILS_KEY);
+        }
+      }
     } catch (err) {
       console.warn('Unable to load saved details from local storage', err);
     }
@@ -1111,11 +1123,21 @@
     URL.revokeObjectURL(url);
   });
  
-  document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('resetBtn').addEventListener('click', async () => {
     form.reset();
     form.dataset.photo = '';
     setPhotoPreview('');
     updateTermDisplay();
+    localStorage.removeItem(DETAILS_KEY);
+    try {
+      await fetch('/api/details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+    } catch (err) {
+      console.warn('Unable to clear active details on server', err);
+    }
   });
 
   // ── Photo Upload & Webcam Logic for Admin ──
