@@ -485,9 +485,14 @@
     <img class="topbar-logo" src="logo.png" alt="IIT" onerror="this.style.display='none'">
     <div class="topbar-name">Indian <span>Info Tech</span></div>
   </div>
-  <button class="btn-admin-top" onclick="openPinModal()">
-    🛡️ Admin Login
-  </button>
+  <div style="display: flex; gap: 8px;">
+    <button class="btn-admin-top" onclick="openStaffModal()" style="background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.45); color: #93c5fd; box-shadow: 0 0 16px rgba(59,130,246,0.1);">
+      👥 Staff Login
+    </button>
+    <button class="btn-admin-top" onclick="openPinModal()">
+      🛡️ Admin Login
+    </button>
+  </div>
 </div>
 
 <!-- Background effects -->
@@ -570,6 +575,35 @@
       </button>
     </div>
 
+  </div>
+</div>
+
+<!-- Staff Login Modal -->
+<div class="modal-overlay" id="staffLoginModal">
+  <div class="modal" style="border-color: rgba(59,130,246,0.2);">
+    <div class="modal-icon" style="background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.25);">👥</div>
+    <h2>Staff Login</h2>
+    <p>Enter your Staff ID and password to access the portal</p>
+
+    <div class="field" style="margin-bottom: 12px; text-align: left;">
+      <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: rgba(255,255,255,0.6); display: block; margin-bottom: 4px;">Staff ID</label>
+      <input type="text" id="staffIdInput" placeholder="STF20260001" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1.5px solid rgba(59,130,246,0.2); border-radius: 12px; color: #fff; outline: none; font-size: 14px;">
+    </div>
+    
+    <div class="field" style="margin-bottom: 16px; text-align: left;">
+      <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: rgba(255,255,255,0.6); display: block; margin-bottom: 4px;">Password</label>
+      <input type="password" id="staffPasswordInput" placeholder="••••••••" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1.5px solid rgba(59,130,246,0.2); border-radius: 12px; color: #fff; outline: none; font-size: 14px;">
+    </div>
+
+    <div class="error-msg" id="staffErrorMsg"></div>
+    
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeStaffModal()">Cancel</button>
+      <button class="btn-enter" id="staffLoginBtn" onclick="submitStaffLogin()" style="background: #3b82f6; color: #fff;">
+        <span class="btn-spinner" id="staffBtnSpinner"></span>
+        <span id="staffBtnText">Login →</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -673,6 +707,67 @@
     updateDots('');
     document.getElementById('errorMsg').textContent = msg;
     setTimeout(() => { input.classList.remove('shake'); input.focus(); }, 400);
+  }
+  // ── Staff Login Modal Controls ──────────────────────────────────────────
+  function openStaffModal() {
+    document.getElementById('staffLoginModal').classList.add('active');
+    document.getElementById('staffIdInput').value = '';
+    document.getElementById('staffPasswordInput').value = '';
+    document.getElementById('staffErrorMsg').textContent = '';
+    setTimeout(() => document.getElementById('staffIdInput').focus(), 120);
+  }
+
+  function closeStaffModal() {
+    document.getElementById('staffLoginModal').classList.remove('active');
+    document.getElementById('staffIdInput').value = '';
+    document.getElementById('staffPasswordInput').value = '';
+    document.getElementById('staffErrorMsg').textContent = '';
+  }
+
+  document.getElementById('staffLoginModal').addEventListener('click', function (e) {
+    if (e.target === this) closeStaffModal();
+  });
+
+  async function submitStaffLogin() {
+    const staffId = document.getElementById('staffIdInput').value.trim();
+    const password = document.getElementById('staffPasswordInput').value.trim();
+    
+    if (!staffId || !password) {
+      document.getElementById('staffErrorMsg').textContent = 'Please enter Staff ID and password.';
+      return;
+    }
+    
+    const btn = document.getElementById('staffLoginBtn');
+    const spinner = document.getElementById('staffBtnSpinner');
+    const btnText = document.getElementById('staffBtnText');
+    
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    btnText.textContent = 'Verifying…';
+    
+    try {
+      const res = await fetch('/api/staff/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId, password })
+      });
+      const data = await res.json();
+      if (data.success && data.token) {
+        sessionStorage.setItem('iitStaffToken', data.token);
+        sessionStorage.setItem('iitStaffName', data.name);
+        sessionStorage.setItem('iitStaffId', data.staffId);
+        closeStaffModal();
+        window.location.href = 'staff.html';
+      } else {
+        document.getElementById('staffErrorMsg').textContent = data.error || 'Incorrect ID or password.';
+      }
+    } catch {
+      document.getElementById('staffErrorMsg').textContent = 'Server error. Please try again.';
+    }
+    
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = 'Login →';
   }
 </script>
 <script src="theme.js"></script>
